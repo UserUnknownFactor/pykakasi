@@ -27,6 +27,8 @@ Flags:
 
 import six
 
+import jaconv
+
 from .exceptions import (InvalidFlagValueException, InvalidModeValueException,
                          UnknownOptionsException,
                          UnsupportedRomanRulesException)
@@ -200,6 +202,10 @@ class kakasi:
                 otext += self._separator
 
         return otext
+
+    @classmethod
+    def normalize(cls, text):
+        return jaconv.normalize(text)
 
 
 class wakati(kakasi):
