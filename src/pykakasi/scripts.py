@@ -8,8 +8,16 @@ from klepto.archives import file_archive  # type: ignore # noqa
 from .exceptions import UnsupportedRomanRulesException
 from .properties import Ch, Configurations, Convert_Tables
 
+class BaseScript(object):
+    def __init__(self, mode, method="Hepburn"):
+        self._conf = Configurations()
+        if mode == "a":
+            self._prefixes = Jisyo(self._conf.jisyo_prefixes)
+            self._suffixes = Jisyo(self._conf.jisyo_suffixes)
+            self._separators = Jisyo(self._conf.jisyo_separators)
+            self._nonletters = Jisyo(self._conf.jisyo_nonletters)
 
-class H2:
+class H2(BaseScript):
 
     _kanadict = None
 
@@ -17,14 +25,14 @@ class H2:
     _ediff = 0x1b164 - 0x1b150
 
     def __init__(self, mode, method="Hepburn"):
-        conf = Configurations()
+        super().__init__(mode, method)
         if mode == "a":
             if method == "Hepburn":
-                self._kanadict = Jisyo(conf.jisyo_hepburn_hira)
+                self._kanadict = Jisyo(self._conf.jisyo_hepburn_hira)
             elif method == "Passport":
-                self._kanadict = Jisyo(conf.jisyo_passport_hira)
+                self._kanadict = Jisyo(self._conf.jisyo_passport_hira)
             elif method == "Kunrei":
-                self._kanadict = Jisyo(conf.jisyo_kunrei_hira)
+                self._kanadict = Jisyo(self._conf.jisyo_kunrei_hira)
             else:
                 raise UnsupportedRomanRulesException("Unsupported roman rule")
 
@@ -67,7 +75,7 @@ class H2:
         return (text[0], 1)
 
 
-class K2 (object):
+class K2(BaseScript):
 
     _kanadict = None
     _halfkanadict = None
@@ -76,15 +84,15 @@ class K2 (object):
     _ediff = 0x1b164 - 0x1b150
 
     def __init__(self, mode, method="Hepburn"):
-        conf = Configurations()
-        self._halfkanadict = Jisyo(conf.jisyo_halfkana)
+        super().__init__(mode, method)
+        self._halfkanadict = Jisyo(self._conf.jisyo_halfkana)
         if mode == "a":
             if method == "Hepburn":
-                self._kanadict = Jisyo(conf.jisyo_hepburn)
+                self._kanadict = Jisyo(self._conf.jisyo_hepburn)
             elif method == "Passport":
-                self._kanadict = Jisyo(conf.jisyo_passport)
+                self._kanadict = Jisyo(self._conf.jisyo_passport)
             elif method == "Kunrei":
-                self._kanadict = Jisyo(conf.jisyo_kunrei)
+                self._kanadict = Jisyo(self._conf.jisyo_kunrei)
             else:
                 raise UnsupportedRomanRulesException("Unsupported roman rule")  # pragma: no cover
 
@@ -172,7 +180,10 @@ class Jisyo:
         return key in self._dict
 
     def lookup(self, key):
-        return self._dict[key]
+        try:
+            return self._dict[key]
+        except:
+            return None
 
     def maxkeylen(self):
         return self._dict['_max_key_len_']

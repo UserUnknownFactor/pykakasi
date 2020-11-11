@@ -24,7 +24,7 @@ class kakasi:
     _values = ["a", "E", "H", "K"]  # type: List[str]
     _roman_vals = ["Hepburn", "Kunrei", "Passport"]  # type: List[str]
     _MAXLEN = 32  # type: int
-    _LONG_SYMBOL = [
+    _LONG_SYMBOL = set([
         # 0x002D,  # -
         0x30FC,  # ー
         # 0x2010,  # ‐
@@ -34,7 +34,7 @@ class kakasi:
         0x2015,  # ―
         0x2212,  # −
         0xFF70  # ｰ
-    ]  # type: List[int]
+    ])  # type: Set[int]
 
     def __init__(self):
         self._conv = {}  # type: Dict[str, Union[J2, H2, K2, A2, Sym2]]
@@ -84,12 +84,14 @@ class kakasi:
             else:
                 _state = False
                 otext = otext + text[i]
-                i += 1
 
-                if ord(otext[-1]) in Ch.endmark:
-                    _result.append(self._iconv(otext, otext))
+                if ord(otext[-1]) in Ch.endmark or self._hahconv._suffixes.lookup(text[i]):
+                    if len(otext) > 1:
+                        _result.append(self._iconv(otext[:-1], otext[:-1]))
+                    _result.append(self._iconv(otext[-1], otext[-1]))
                     otext = ''
                     _state = True
+                i += 1
 
         if otext:
             _result.append(self._iconv(otext, otext))
@@ -271,10 +273,9 @@ class kakasi:
                 chunk = ''
 
                 while i < len(text):
-
                     if ord(text[i]) in self._LONG_SYMBOL:
 
-                        # FIXME: q&d workaround when hiragana/katanaka dash is first char.
+                        # FIXME: q&d workaround when hiragana/katakana dash is first char.
                         if self._mode[mode] is not None and len(chunk) > 0:
                             # use previous char as a transliteration for kana-dash
                             orig += text[i]
@@ -328,8 +329,10 @@ class kakasi:
                 otext += chunk
 
             # insert separator when option specified and it is not a last character and not an end mark
-            if self._flag["s"] and otext[-len(self._separator):] != self._separator \
-                    and i < len(text) and not (ord(text[i]) in Ch.endmark):
+            next_orig_text = text[i].isalpha() if i + 1 < len(text) else False
+            last_ascii_text = otext[-1].isalpha()
+            if self._flag["s"] and otext[-len(self._separator):] != self._separator and (
+                    last_ascii_text and next_orig_text):
                 otext += self._separator
 
         return otext
@@ -373,7 +376,7 @@ class wakati(kakasi):
                     if self._state:
                         otext = otext + text[i:i + ln] + self._separator
                     else:
-                        otext = otext + self._separator + text[i:i + ln] + self._separator
+                        otext = otext + self._separator + text[i:i + ln]
                         self._state = True
                     i = i + ln
                 else:

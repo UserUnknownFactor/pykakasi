@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 from klepto.archives import file_archive  # type: ignore # noqa
 
 root_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-
+DICT_SEPARATOR = '\t'
 
 class Genkanwadict:
     records = {}  # type: Dict[str, Dict[str, List[Tuple[str, str]]]]
@@ -37,37 +37,41 @@ class Genkanwadict:
     def mkdict(self, src: str, dst: str):
         max_key_len = 0
         dic = {}
+        i = 0
         with open(src, "r", encoding="utf-8") as f:
             for raw in f:
+                i += 1
                 line = raw.strip()
                 if line.startswith(';;'):  # skip comment
                     continue
                 if re.match(r"^$", line):
                     continue
                 try:
-                    (v, k) = self.decode_escapes(line).split(' ')
+                    (v, k) = self.decode_escapes(line).split(DICT_SEPARATOR)
                     dic[k] = v
                     max_key_len = max(max_key_len, len(k))
                 except ValueError:
-                    raise Exception("Cannot process dictionary line: ", line)
+                    raise SyntaxError(f"error in dictionary {os.path.basename(src)} line #{i}: {line}")
         d = file_archive(dst, dic, serialized=True)
         d['_max_key_len_'] = max_key_len
         d.dump()
 
     def maketrans(self, src, dst):
         dict = {}
+        i = 0
         with open(src, 'r', encoding='utf-8') as f:
             for raw in f:
+                i += 1
                 line = raw.strip()
                 if line.startswith(';;'):  # skip commnet
                     continue
                 if re.match(r"^$", line):
                     continue
                 try:
-                    (v, k) = self.decode_escapes(line).split(' ')
+                    (v, k) = self.decode_escapes(line).split(DICT_SEPARATOR)
                     dict[ord(k)] = v
                 except ValueError:
-                    raise Exception("Cannot process dictionary line: ", line)
+                    raise SyntaxError(f"error in dictionary {os.path.basename(src)} line #{i}: {line}")
         for i in range(0xFE00, 0xFE02):
             dict[i] = None
         for i in range(0xE0100, 0xE01EF):
@@ -80,7 +84,7 @@ class Genkanwadict:
     def parsekdict(self, line: str):
         if line.startswith(';;'):  # skip comment
             return
-        (yomi, kanji) = line.split(' ')
+        (yomi, kanji) = line.split(DICT_SEPARATOR)
         if ord(yomi[-1:]) <= ord('z'):
             tail = yomi[-1:]
             yomi = yomi[:-1]
@@ -105,7 +109,7 @@ class Genkanwadict:
         dic = file_archive(out, self.records, serialized=True)
         dic.dump()
 
-    def generate_dictionaries(self, dstdir):
+    def generate_dictionaries(self, dstdir="data"):
         DICTS = [
             ('hepburndict.utf8', 'hepburndict3.db'),
             ('kunreidict.utf8', 'kunreidict3.db'),
@@ -113,7 +117,11 @@ class Genkanwadict:
             ('hepburnhira.utf8', 'hepburnhira3.db'),
             ('kunreihira.utf8', 'kunreihira3.db'),
             ('passporthira.utf8', 'passporthira3.db'),
-            ('halfkana.utf8', 'halfkana3.db')
+            ('halfkana.utf8', 'halfkana3.db'),
+            ('prefixes.utf8', 'prefixes3.db'),
+            ('suffixes.utf8', 'suffixes3.db'),
+            ('separators.utf8', 'separators3.db'),
+            ('nonletters.utf8', 'nonletters3.db'),
         ]
         srcdir = os.path.join(root_dir, 'src', 'data')
         if not os.path.exists(dstdir):
@@ -136,3 +144,6 @@ class Genkanwadict:
         if (os.path.exists(dst)):
             os.unlink(dst)
         self.run(src, dst)
+        
+if __name__ == "__main__":
+    Genkanwadict().generate_dictionaries()

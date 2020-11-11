@@ -24,6 +24,10 @@ class Configurations:
     jisyo_passport = 'passportdict3.db'
     jisyo_kunrei = 'kunreidict3.db'
     jisyo_halfkana = 'halfkana3.db'
+    jisyo_prefixes =  'prefixes3.db'
+    jisyo_suffixes =  'suffixes3.db'
+    jisyo_separators =  'separators3.db'
+    jisyo_nonletters = 'nonletters3.db'
 
     def __new__(cls, *p, **k):
         self = object.__new__(cls, *p, **k)
@@ -66,7 +70,7 @@ class Ch:
     zenkaku_number_nine = 0xff1a
     zenkaku_A = 0xff21
     zenkaku_a = 0xff41
-    endmark = [ord(a) for a in [")", "]", "!", ",", ".", u'\u3001', u'\u3002']]
+    endmark = [ord(a) for a in [")", "]", "!", "?", ";", ",", ".", u'\u3001', u'\u3002']]
 
 
 class Convert_Tables:
